@@ -43,34 +43,43 @@
                 <div class="divider"></div>
             </div>
             <div class="product-grid">
-                <div class="product-card">
+                <div class="product-card" data-size="1.000 ml" data-price="Rp 10.000">
                     <div class="card-image">
-                        <img src="small.jpeg" alt="Small Onion Cake" class="product-img">
+                        <img src="kecil.jpeg" alt="Small Onion Cake" class="product-img">
                     </div>
                     <div class="card-details">
                         <h3>1.000 ml <span class="price">Rp 10.000</span></h3>
                         <p><b>Pas di Kantong, Tetap Kriuk Maksimal</b><br>
                             Ukuran praktis buat camilan harian. Cocok buat nemenin santai, nonton, atau ngemil tanpa mikir panjang.</p>
+                        <div class="card-actions">
+                            <button class="btn order-btn">Pesan</button>
+                        </div>
                     </div>
                 </div>
-                <div class="product-card featured">
+                <div class="product-card featured" data-size="1.300 ml" data-price="Rp 15.000">
                     <div class="card-image">
-                        <img src="medium.jpeg" alt="Medium Onion Cake" class="product-img">
+                        <img src="sedang.jpeg" alt="Medium Onion Cake" class="product-img">
                     </div>
                     <div class="card-details">
                         <h3>1.300 ml <span class="price">Rp 15.000</span></h3>
                        <p><b>Lebih Banyak, Lebih Puas</b><br>
                             Isi lebih banyak dengan kriuk yang tetap konsisten. Pilihan pas buat sharing bareng keluarga atau teman.</p>
+                        <div class="card-actions">
+                            <button class="btn order-btn">Pesan</button>
+                        </div>
                     </div>
                 </div>
-                <div class="product-card">
+                <div class="product-card" data-size="1.500 ml" data-price="Rp 20.000">
                     <div class="card-image">
-                        <img src="large.jpeg" alt="Large Onion Cake" class="product-img">
+                        <img src="besar.jpeg" alt="Large Onion Cake" class="product-img">
                     </div>
                     <div class="card-details">
                         <h3>1.500 ml <span class="price">Rp 20.000</span></h3>
                         <p><b>Paling Besar, Paling Nagih</b><br>
                             Ukuran jumbo untuk pencinta kue bawang sejati. Cocok buat acara, stok di rumah, atau dibagi rame-rame.</p>
+                        <div class="card-actions">
+                            <button class="btn order-btn">Pesan</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -83,18 +92,153 @@
             </div>
             <p class="contact-intro">Ready to taste the magic? Place your order directly through WhatsApp or check out our latest creations on Instagram.</p>
             <div class="contact-links">
-                <a href="https://wa.me/6281268089520" target="_blank" class="btn whatsapp">
+                <a href="#" id="waButton" data-phone="6281268089520" class="btn whatsapp">
                     <i class="fa-brands fa-whatsapp"></i> Order on WhatsApp
                 </a>
-                <a href="https://instagram.com/canalogz" target="_blank" class="btn instagram">
-                    <i class="fa-brands fa-instagram"></i> Follow @canalogz
+                <a href="https://instagram.com/Nonachips_" target="_blank" class="btn instagram">
+                    <i class="fa-brands fa-instagram"></i> Follow @Nonachips_
                 </a>
             </div>
         </section>
     </main>
 
+    <!-- Order Modal -->
+    <div id="orderModal" class="modal" aria-hidden="true">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="Close">&times;</button>
+            <h3>Isi Pesanan</h3>
+            <form id="orderForm">
+                <label for="customerName">Nama</label>
+                <input type="text" id="customerName" name="customerName" required>
+
+                <label>Ukuran</label>
+                <div id="sizeOptions" class="size-options" role="radiogroup" aria-label="Pilih ukuran"></div>
+
+                <label for="orderPrice">Harga</label>
+                <input type="text" id="orderPrice" name="orderPrice" readonly>
+
+                <label for="orderQty">Jumlah</label>
+                <input type="number" id="orderQty" name="orderQty" min="1" value="1">
+
+                <div class="modal-actions">
+                    <button type="button" class="btn" id="cancelBtn">Batal</button>
+                    <button type="submit" class="btn whatsapp">Kirim via WhatsApp</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <footer>
         <p>Website created on: Thursday, 26 December 2025</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const cards = Array.from(document.querySelectorAll('.product-card'));
+            const waButton = document.getElementById('waButton');
+            const modal = document.getElementById('orderModal');
+            const overlay = modal.querySelector('.modal-overlay');
+            const closeBtn = modal.querySelector('.modal-close');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const orderForm = document.getElementById('orderForm');
+            const nameInput = document.getElementById('customerName');
+            const priceInput = document.getElementById('orderPrice');
+            const qtyInput = document.getElementById('orderQty');
+            const sizeOptionsContainer = document.getElementById('sizeOptions');
+
+            // Build products data from cards
+            const products = cards.map(c => ({
+                size: (c.dataset.size || c.querySelector('h3')?.innerText || '').trim(),
+                price: (c.dataset.price || c.querySelector('.price')?.innerText || '').trim(),
+                card: c
+            }));
+
+            let activeIndex = 0;
+
+            // No click-to-select on cards (feature removed)
+
+            // Per-card order button opens modal and preselects that size
+            document.querySelectorAll('.order-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const card = this.closest('.product-card');
+                    const idx = products.findIndex(p => p.card === card);
+                    if (idx >= 0) activeIndex = idx;
+                    openModal();
+                });
+            });
+
+            function buildSizeOptions(selectedIdx) {
+                sizeOptionsContainer.innerHTML = products.map((p, i) => {
+                    const checked = i === selectedIdx ? 'checked' : '';
+                    return `
+                        <label class="size-option ${checked ? 'selected' : ''}" data-index="${i}">
+                            <input type="radio" name="sizeOption" value="${p.size}" data-price="${p.price}" ${checked} />
+                            <span class="size-label">${p.size}</span>
+                            <small class="size-price">${p.price}</small>
+                        </label>`;
+                }).join('');
+
+                const optionEls = sizeOptionsContainer.querySelectorAll('.size-option');
+                optionEls.forEach(opt => {
+                    const input = opt.querySelector('input[type="radio"]');
+                    opt.addEventListener('click', () => {
+                        input.checked = true;
+                        optionEls.forEach(o => o.classList.remove('selected'));
+                        opt.classList.add('selected');
+                        priceInput.value = input.dataset.price || '';
+                    });
+                    input.addEventListener('change', () => {
+                        optionEls.forEach(o => o.classList.remove('selected'));
+                        opt.classList.add('selected');
+                        priceInput.value = input.dataset.price || '';
+                    });
+                });
+            }
+
+            function openModal() {
+                if (!products.length) { alert('Tidak ada produk.'); return; }
+                buildSizeOptions(activeIndex);
+                priceInput.value = products[activeIndex].price;
+                nameInput.value = '';
+                qtyInput.value = 1;
+                modal.classList.add('open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeModal() {
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            // WA button in header still opens modal (default)
+            waButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                activeIndex = 0; // default to first product
+                openModal();
+            });
+
+            overlay.addEventListener('click', closeModal);
+            closeBtn.addEventListener('click', closeModal);
+            cancelBtn.addEventListener('click', closeModal);
+
+            orderForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const name = nameInput.value.trim();
+                const qty = qtyInput.value || 1;
+                const selectedRadio = document.querySelector('input[name="sizeOption"]:checked');
+                if (!selectedRadio) { alert('Pilih ukuran.'); return; }
+                const size = selectedRadio.value;
+                const price = selectedRadio.dataset.price || '';
+                if (!name) { nameInput.focus(); return; }
+                const phone = waButton.dataset.phone || '6281268089520';
+                const message = `Halo, saya ${name} ingin pesan ${size} (Harga: ${price}) x${qty}. Terima kasih.`;
+                const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+                closeModal();
+            });
+        });
+    </script>
 </body>
 </html>
