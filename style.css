@@ -98,7 +98,7 @@ h1 {
 
 .tagline {
     font-size: 1.5rem;
-    color: var(--text-light);
+    color: white;
     margin-bottom: 2.5rem;
     font-weight: 300;
 }
