@@ -39,9 +39,9 @@ h1, h2, h3 {
 /* Header & Hero Section */
 header.hero {
     position: relative;
-    height: 80vh;
-    min-height: 500px;
-    background: linear-gradient(135deg, #fdfbf7 0%, #e8dcb9 100%); /* Fallback if no image */
+    min-height: 100vh;              /* penuh 1 layar */
+    height: 100vh;                  /* paksa setinggi viewport */
+    background: url("bk.jpeg") center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -49,17 +49,16 @@ header.hero {
     overflow: hidden;
 }
 
-/* Optional: Add a subtle pattern overlay if desired later */
+
+/* overlay gelap di atas gambar (opsional, biar teks lebih kebaca) */
 header.hero::before {
-    content: '';
+    content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45); /* atur opacity sesuai selera */
     z-index: 1;
 }
+
 
 .hero-content {
     position: relative;
@@ -300,7 +299,9 @@ h1 {
 /* Size options inside modal (vertical list) */
 .size-options { display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem; }
 .size-option { display:flex; align-items:center; gap:0.75rem; padding:0.5rem; border-radius:8px; border:1px solid #f0f0f0; cursor:pointer; }
-.size-option input[type="radio"] { transform:scale(1.1); }
+.size-option input[type="checkbox"] { transform:scale(1.05); }
+.size-qty { width: 72px; padding:6px 8px; border-radius:6px; border:1px solid #e6e6e6; }
+.size-subtotal { margin-left: auto; font-weight:700; color:var(--primary-color); }
 .size-option.selected { border-color: var(--primary-color); background: #fff7f0; }
 
 /* Cancel button style (red) */

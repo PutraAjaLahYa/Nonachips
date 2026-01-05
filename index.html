@@ -95,7 +95,7 @@
                         <img src="kecil.jpeg" alt="Small Onion Cake" class="product-img">
                     </div>
                     <div class="card-details">
-                        <h3>1.000 ml <span class="price">Rp 10.000</span></h3>
+                        <h3>1.000 ml <span class="price">Rp 20.000</span></h3>
                         <p><b>Pas di Kantong, Tetap Kriuk Maksimal</b><br>
                             Ukuran praktis buat camilan harian. Cocok buat nemenin santai, nonton, atau ngemil tanpa mikir panjang.</p>
                         <div class="card-actions">
@@ -108,7 +108,7 @@
                         <img src="sedang.jpeg" alt="Medium Onion Cake" class="product-img">
                     </div>
                     <div class="card-details">
-                        <h3>1.300 ml <span class="price">Rp 15.000</span></h3>
+                        <h3>1.300 ml <span class="price">Rp 35.000</span></h3>
                        <p><b>Lebih Banyak, Lebih Puas</b><br>
                             Isi lebih banyak dengan kriuk yang tetap konsisten. Pilihan pas buat sharing bareng keluarga atau teman.</p>
                         <div class="card-actions">
@@ -121,7 +121,7 @@
                         <img src="besar.jpeg" alt="Large Onion Cake" class="product-img">
                     </div>
                     <div class="card-details">
-                        <h3>1.500 ml <span class="price">Rp 20.000</span></h3>
+                        <h3>1.500 ml <span class="price">Rp 45.000</span></h3>
                         <p><b>Paling Besar, Paling Nagih</b><br>
                             Ukuran jumbo untuk pencinta kue bawang sejati. Cocok buat acara, stok di rumah, atau dibagi rame-rame.</p>
                         <div class="card-actions">
@@ -137,7 +137,7 @@
                 <h2>Get In Touch</h2>
                 <div class="divider"></div>
             </div>
-            <p class="contact-intro">Ready to taste the Chips? Place your order directly through WhatsApp or check out our latest creations on Instagram.</p>
+            <p class="contact-intro">Craving our chips? Order easily through WhatsApp or explore our newest creations on Instagram.</p>
             <div class="contact-links">
                 <a href="#" id="waButton" data-phone="6281268089520" class="btn whatsapp">
                     <i class="fa-brands fa-whatsapp"></i> Order on WhatsApp
@@ -159,14 +159,15 @@
                 <label for="customerName">Nama</label>
                 <input type="text" id="customerName" name="customerName" required>
 
-                <label>Ukuran</label>
-                <div id="sizeOptions" class="size-options" role="radiogroup" aria-label="Pilih ukuran"></div>
+                <label>Ukuran (pilih satu atau lebih)</label>
+                <div id="sizeOptions" class="size-options" aria-label="Pilih ukuran"></div>
 
-                <label for="orderPrice">Harga</label>
-                <input type="text" id="orderPrice" name="orderPrice" readonly>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:0.75rem;">
+                    <label for="orderTotal" style="font-weight:600;margin:0;">Total</label>
+                    <output id="orderTotal" name="orderTotal">Rp 0</output>
+                </div>
 
-                <label for="orderQty">Jumlah</label>
-                <input type="number" id="orderQty" name="orderQty" min="1" value="1">
+                <!-- Per-size quantities handled per option -->
 
                 <div class="modal-actions">
                     <button type="button" class="btn" id="cancelBtn">Batal</button>
@@ -190,8 +191,6 @@
             const cancelBtn = document.getElementById('cancelBtn');
             const orderForm = document.getElementById('orderForm');
             const nameInput = document.getElementById('customerName');
-            const priceInput = document.getElementById('orderPrice');
-            const qtyInput = document.getElementById('orderQty');
             const sizeOptionsContainer = document.getElementById('sizeOptions');
 
             // Build products data from cards
@@ -216,40 +215,109 @@
                 });
             });
 
+            function parsePriceToNumber(priceText) {
+                if (!priceText) return 0;
+                // remove non digits
+                const digits = priceText.replace(/[^0-9]/g, '');
+                return parseInt(digits || '0', 10);
+            }
+
+            function formatRupiah(num) {
+                return 'Rp ' + (num).toLocaleString('id-ID');
+            }
+
             function buildSizeOptions(selectedIdx) {
                 sizeOptionsContainer.innerHTML = products.map((p, i) => {
-                    const checked = i === selectedIdx ? 'checked' : '';
+                    const unit = p.price;
                     return `
-                        <label class="size-option ${checked ? 'selected' : ''}" data-index="${i}">
-                            <input type="radio" name="sizeOption" value="${p.size}" data-price="${p.price}" ${checked} />
+                        <label class="size-option" data-index="${i}">
+                            <input type="checkbox" name="sizeCheck" data-index="${i}" />
                             <span class="size-label">${p.size}</span>
-                            <small class="size-price">${p.price}</small>
+                            <span class="size-price">${unit}</span>
+                            <input type="number" class="size-qty" min="1" value="1" data-index="${i}" disabled />
                         </label>`;
                 }).join('');
 
+                // initialize price display and wire interactions using delegation
                 const optionEls = sizeOptionsContainer.querySelectorAll('.size-option');
                 optionEls.forEach(opt => {
-                    const input = opt.querySelector('input[type="radio"]');
-                    opt.addEventListener('click', () => {
-                        input.checked = true;
-                        optionEls.forEach(o => o.classList.remove('selected'));
-                        opt.classList.add('selected');
-                        priceInput.value = input.dataset.price || '';
-                    });
-                    input.addEventListener('change', () => {
-                        optionEls.forEach(o => o.classList.remove('selected'));
-                        opt.classList.add('selected');
-                        priceInput.value = input.dataset.price || '';
-                    });
+                    const sizePriceEl = opt.querySelector('.size-price');
+                    const idx = parseInt(opt.dataset.index, 10);
+                    sizePriceEl.textContent = products[idx].price;
+                    const qty = opt.querySelector('.size-qty');
+                    qty.disabled = true;
                 });
+
+                function updateSubtotalForOption(opt) {
+                    const checkbox = opt.querySelector('input[type="checkbox"]');
+                    const qty = opt.querySelector('.size-qty');
+                    const sizePriceEl = opt.querySelector('.size-price');
+                    const idx = parseInt(opt.dataset.index, 10);
+                    const unitPrice = parsePriceToNumber(products[idx].price);
+                    const q = Math.max(1, parseInt(qty.value || '1', 10));
+                    const sub = checkbox.checked ? unitPrice * q : 0;
+                    sizePriceEl.textContent = checkbox.checked ? formatRupiah(sub) : products[idx].price;
+                }
+
+                sizeOptionsContainer.addEventListener('change', function (e) {
+                    const target = e.target;
+                    const opt = target.closest('.size-option');
+                    if (!opt) return;
+                    if (target.type === 'checkbox') {
+                        const checkbox = opt.querySelector('input[type="checkbox"]');
+                        const qty = opt.querySelector('.size-qty');
+                        qty.disabled = !checkbox.checked;
+                        if (!checkbox.checked) qty.value = 1;
+                        updateSubtotalForOption(opt);
+                        computeTotal();
+                    }
+                });
+
+                sizeOptionsContainer.addEventListener('input', function (e) {
+                    const target = e.target;
+                    if (!target.classList.contains('size-qty')) return;
+                    const opt = target.closest('.size-option');
+                    if (!opt) return;
+                    if (target.value === '' || parseInt(target.value, 10) < 1) target.value = 1;
+                    updateSubtotalForOption(opt);
+                    computeTotal();
+                });
+
+                // if a particular product was preselected (activeIndex), check it
+                const pre = sizeOptionsContainer.querySelector(`.size-option[data-index="${selectedIdx}"]`);
+                if (pre) {
+                    const cb = pre.querySelector('input[type="checkbox"]');
+                    const qty = pre.querySelector('.size-qty');
+                    cb.checked = true;
+                    qty.disabled = false;
+                    updateSubtotalForOption(pre);
+                }
+
+                // initial compute
+                computeTotal();
+            }
+
+            function computeTotal() {
+                const optionEls = sizeOptionsContainer.querySelectorAll('.size-option');
+                let total = 0;
+                optionEls.forEach(opt => {
+                    const idx = parseInt(opt.dataset.index, 10);
+                    const checkbox = opt.querySelector('input[type="checkbox"]');
+                    const qty = opt.querySelector('.size-qty');
+                    const unitPrice = parsePriceToNumber(products[idx].price);
+                    if (checkbox.checked) {
+                        const q = Math.max(1, parseInt(qty.value || '1', 10));
+                        total += unitPrice * q;
+                    }
+                });
+                const totalEl = document.getElementById('orderTotal');
+                totalEl.textContent = formatRupiah(total);
             }
 
             function openModal() {
                 if (!products.length) { alert('Tidak ada produk.'); return; }
                 buildSizeOptions(activeIndex);
-                priceInput.value = products[activeIndex].price;
                 nameInput.value = '';
-                qtyInput.value = 1;
                 modal.classList.add('open');
                 modal.setAttribute('aria-hidden', 'false');
             }
@@ -273,14 +341,25 @@
             orderForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const name = nameInput.value.trim();
-                const qty = qtyInput.value || 1;
-                const selectedRadio = document.querySelector('input[name="sizeOption"]:checked');
-                if (!selectedRadio) { alert('Pilih ukuran.'); return; }
-                const size = selectedRadio.value;
-                const price = selectedRadio.dataset.price || '';
                 if (!name) { nameInput.focus(); return; }
+                // collect selected sizes
+                const optionEls = sizeOptionsContainer.querySelectorAll('.size-option');
+                const selections = [];
+                optionEls.forEach(opt => {
+                    const idx = parseInt(opt.dataset.index, 10);
+                    const checkbox = opt.querySelector('input[type="checkbox"]');
+                    const qty = parseInt(opt.querySelector('.size-qty').value || '1', 10);
+                    if (checkbox.checked) {
+                        selections.push({ size: products[idx].size, qty, unitPrice: parsePriceToNumber(products[idx].price) });
+                    }
+                });
+                if (!selections.length) { alert('Pilih minimal satu ukuran.'); return; }
+                // build message
+                let lines = selections.map(s => `${s.size} x${s.qty} = ${formatRupiah(s.unitPrice * s.qty)}`);
+                const total = selections.reduce((acc, s) => acc + s.unitPrice * s.qty, 0);
+                lines.push('Total: ' + formatRupiah(total));
                 const phone = waButton.dataset.phone || '6281268089520';
-                const message = `Halo, saya ${name} ingin pesan ${size} (Harga: ${price}) x${qty}. Terima kasih.`;
+                const message = `Halo, saya ${name} ingin pesan:\n` + lines.join('\n') + '\nTerima kasih.';
                 const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                 window.open(url, '_blank');
                 closeModal();
